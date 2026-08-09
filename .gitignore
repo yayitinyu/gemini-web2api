@@ -1,0 +1,27 @@
+# Local reference implementations (read-only research inputs)
+/gemini-web2api-go/
+/gemini-web2api-python/
+
+# Runtime data and local secrets
+/.env
+/data/
+*.db
+*.db-shm
+*.db-wal
+
+# Frontend build and dependency output
+/web/node_modules/
+/web/coverage/
+/webui/dist/*
+!/webui/dist/.gitkeep
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# QA artifacts
+/tmp/
+/playwright-report/
+/test-results/

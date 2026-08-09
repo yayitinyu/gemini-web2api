@@ -1,0 +1,11 @@
+.git
+.github
+.env
+data
+tmp
+docs
+gemini-web2api-go
+gemini-web2api-python
+web/node_modules
+web/coverage
+README*.md
