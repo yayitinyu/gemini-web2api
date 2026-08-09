@@ -63,7 +63,7 @@ ADMIN_PASSWORD=请替换为足够长的随机密码
 ### 2. 启动
 
 ```bash
-docker compose up -d
+docker compose up --build -d
 docker compose ps
 ```
 
@@ -98,7 +98,7 @@ COOKIE_SECURE=true
 TRUST_PROXY_HEADERS=true
 ```
 
-然后运行 `docker compose up -d` 重新创建容器。只有当前端代理完全可信时才启用 `TRUST_PROXY_HEADERS`。
+然后运行 `docker compose up --build -d` 重新创建容器。只有当前端代理完全可信时才启用 `TRUST_PROXY_HEADERS`。
 
 若确定要直接公开端口，可以设置 `BIND_ADDRESS=0.0.0.0`，但不建议在没有 HTTPS 和防火墙限制的情况下暴露管理面板。
 
@@ -207,6 +207,8 @@ docker compose pull
 docker compose up -d
 docker compose ps
 ```
+
+GitHub Packages 的新容器包默认是私有的。仓库所有者可以在包设置中改为 Public（此操作不可逆），或者先用具有 `read:packages` 权限的令牌登录 GHCR。若不准备开放镜像，使用 `docker compose up --build -d` 即可直接从源码构建，无需拉取 GHCR。
 
 ## 本地开发
 
