@@ -6,7 +6,7 @@ import { ShieldCheck } from '@phosphor-icons/react/dist/icons/ShieldCheck'
 import { WarningCircle } from '@phosphor-icons/react/dist/icons/WarningCircle'
 import { apiRequest } from '../api/client'
 import type { APIKeyRotation, APIKeyState, RuntimeSettings, SettingsResponse } from '../api/types'
-import { Button, LoadingView, Modal, PageHeader, type ToastKind } from '../components/UI'
+import { Button, LoadingView, Modal, PageHeader, Select, type ToastKind } from '../components/UI'
 import { errorMessage } from '../utils'
 
 export function SettingsPage({ toast }: { toast: (kind: ToastKind, text: string) => void }) {
@@ -75,7 +75,7 @@ export function SettingsPage({ toast }: { toast: (kind: ToastKind, text: string)
         <section className="settings-section">
           <header className="section-heading"><div><span>GENERATION</span><h2>生成策略</h2></div></header>
           <div className="form-grid">
-            <label className="field"><span>默认模型</span><select value={settings.default_model} onChange={(e) => update('default_model', e.target.value)}>{models.map((model) => <option key={model}>{model}</option>)}</select></label>
+            <div className="field"><span>默认模型</span><Select ariaLabel="默认模型" value={settings.default_model} onChange={(value) => update('default_model', value)} options={models.map((model) => ({ value: model, label: model, description: model.includes('pro') ? '更强推理与复杂任务' : '低延迟通用生成' }))} /></div>
             <label className="field"><span>请求超时 <small>10–600 秒</small></span><input type="number" min={10} max={600} value={settings.request_timeout_sec} onChange={(e) => update('request_timeout_sec', Number(e.target.value))} /></label>
             <label className="field"><span>尝试次数 <small>1–4 次</small></span><input type="number" min={1} max={4} value={settings.retry_attempts} onChange={(e) => update('retry_attempts', Number(e.target.value))} /></label>
             <label className="field"><span>重试间隔 <small>毫秒</small></span><input type="number" min={0} max={10000} step={50} value={settings.retry_delay_ms} onChange={(e) => update('retry_delay_ms', Number(e.target.value))} /></label>

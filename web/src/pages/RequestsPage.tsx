@@ -5,11 +5,17 @@ import { FunnelSimple } from '@phosphor-icons/react/dist/icons/FunnelSimple'
 import { Pulse } from '@phosphor-icons/react/dist/icons/Pulse'
 import { apiRequest } from '../api/client'
 import type { RequestPage } from '../api/types'
-import { Button, EmptyState, LoadingView, PageHeader } from '../components/UI'
+import { Button, EmptyState, LoadingView, PageHeader, Select, type SelectOption } from '../components/UI'
 import { errorMessage, formatDateTime, formatLatency, formatNumber } from '../utils'
 
 const limit = 25
 const modelOptions = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro']
+const modelSelectOptions: SelectOption[] = [{ value: '', label: '全部模型' }, ...modelOptions.map((model) => ({ value: model, label: model }))]
+const statusSelectOptions: SelectOption[] = [
+  { value: '', label: '全部状态' },
+  { value: 'success', label: '仅成功' },
+  { value: 'error', label: '仅错误' },
+]
 
 export function RequestsPage() {
   const [data, setData] = useState<RequestPage | null>(null)
@@ -44,8 +50,8 @@ export function RequestsPage() {
     <div className="page">
       <PageHeader eyebrow="METADATA AUDIT" title="请求轨迹" description="排查状态、模型、账号与耗时；提示词和生成正文永远不会写入审计表。" />
       <form className="filter-bar" onSubmit={applyFilters}>
-        <label><span>模型</span><select value={draft.model} onChange={(e) => setDraft({ ...draft, model: e.target.value })}><option value="">全部模型</option>{modelOptions.map((model) => <option key={model}>{model}</option>)}</select></label>
-        <label><span>结果</span><select value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })}><option value="">全部状态</option><option value="success">仅成功</option><option value="error">仅错误</option></select></label>
+        <div className="filter-field"><span>模型</span><Select compact ariaLabel="模型" value={draft.model} onChange={(value) => setDraft({ ...draft, model: value })} options={modelSelectOptions} /></div>
+        <div className="filter-field"><span>结果</span><Select compact ariaLabel="结果" value={draft.status} onChange={(value) => setDraft({ ...draft, status: value })} options={statusSelectOptions} /></div>
         <Button type="submit" variant="secondary" icon={<FunnelSimple size={17} weight="light" />}>应用筛选</Button>
         {(filters.model || filters.status) && <button type="button" className="text-link" onClick={() => { setDraft({ model: '', status: '' }); setFilters({ model: '', status: '' }); setOffset(0) }}>清除筛选</button>}
       </form>

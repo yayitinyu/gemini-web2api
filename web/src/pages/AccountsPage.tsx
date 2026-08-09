@@ -7,7 +7,7 @@ import { TrashSimple } from '@phosphor-icons/react/dist/icons/TrashSimple'
 import { UsersThree } from '@phosphor-icons/react/dist/icons/UsersThree'
 import { apiRequest } from '../api/client'
 import type { Account, ProbeResult, Proxy } from '../api/types'
-import { Button, EmptyState, LoadingView, Modal, PageHeader, StatusBadge, type ToastKind } from '../components/UI'
+import { Button, EmptyState, LoadingView, Modal, PageHeader, Select, StatusBadge, type ToastKind } from '../components/UI'
 import { errorMessage, relativeTime } from '../utils'
 
 interface AccountDraft {
@@ -67,7 +67,7 @@ function AccountDialog({ account, proxies, open, onClose, onSaved, toast }: {
       <form id="account-form" className="form-grid" onSubmit={submit}>
         <label className="field field--wide"><span>显示名称</span><input value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} required maxLength={80} placeholder="例如：主账号" /></label>
         <label className="field field--wide"><span>Google Cookie {account && <small>留空则保持原值</small>}</span><textarea value={draft.cookie} onChange={(e) => setDraft({ ...draft, cookie: e.target.value })} required={!account} rows={5} placeholder="粘贴包含 __Secure-1PSID 与 __Secure-1PSIDTS 的 Cookie" spellCheck={false} /></label>
-        <label className="field"><span>固定出口</span><select value={draft.proxy_id} onChange={(e) => setDraft({ ...draft, proxy_id: Number(e.target.value) })}><option value={0}>自动选择 / 直连</option>{proxies.map((proxy) => <option value={proxy.id} key={proxy.id}>{proxy.label}</option>)}</select></label>
+        <div className="field"><span>固定出口</span><Select ariaLabel="固定出口" value={String(draft.proxy_id)} onChange={(value) => setDraft({ ...draft, proxy_id: Number(value) })} options={[{ value: '0', label: '自动选择 / 直连', description: '由网关按可用性自动决定出口' }, ...proxies.map((proxy) => ({ value: String(proxy.id), label: proxy.label, description: '固定使用此代理出口' }))]} /></div>
         <label className="switch-field"><span><strong>启用账号</strong><small>关闭后不参与轮询</small></span><input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} /><i /></label>
         <label className="field field--wide"><span>备注</span><input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} maxLength={200} placeholder="可选，仅管理员可见" /></label>
         {formError && <p className="form-error field--wide" role="alert">{formError}</p>}
