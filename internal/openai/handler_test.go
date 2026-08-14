@@ -37,7 +37,7 @@ func TestChatStreamingSequence(t *testing.T) {
 	t.Parallel()
 	handler := NewHandler(&mockGateway{text: "hello"}, nil, 1<<20)
 	request := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", strings.NewReader(`{
-  "model":"gemini-3.6-flash","stream":true,"stream_options":{"include_usage":true},
+  "model":"gemini-3.7-flash","stream":true,"stream_options":{"include_usage":true},
   "messages":[{"role":"user","content":"hi"}]
 }`))
 	response := httptest.NewRecorder()
@@ -52,7 +52,7 @@ func TestResponsesLifecyclePrecedesTextDelta(t *testing.T) {
 	t.Parallel()
 	handler := NewHandler(&mockGateway{text: "hello"}, nil, 1<<20)
 	request := httptest.NewRequest(http.MethodPost, "/v1/responses", strings.NewReader(`{
-  "model":"gemini-3.6-flash","stream":true,"input":"hi"
+  "model":"gemini-3.7-flash","stream":true,"input":"hi"
 }`))
 	response := httptest.NewRecorder()
 	handler.Responses(response, request)
@@ -72,7 +72,7 @@ func TestResponsesNonStreamingToolCall(t *testing.T) {
 	text := "```tool_call\n{\"name\":\"lookup\",\"arguments\":{\"id\":1}}\n```"
 	handler := NewHandler(&mockGateway{text: text}, nil, 1<<20)
 	request := httptest.NewRequest(http.MethodPost, "/v1/responses", strings.NewReader(`{
-  "model":"gemini-3.6-flash","input":"hi",
+  "model":"gemini-3.7-flash","input":"hi",
   "tools":[{"type":"function","name":"lookup","parameters":{"type":"object"}}]
 }`))
 	response := httptest.NewRecorder()

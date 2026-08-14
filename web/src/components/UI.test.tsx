@@ -39,9 +39,9 @@ describe('Modal', () => {
 })
 
 function SelectHarness() {
-  const [value, setValue] = useState('gemini-3.6-flash')
+  const [value, setValue] = useState('gemini-3.7-flash')
   return <Select ariaLabel="默认模型" value={value} onChange={setValue} options={[
-    { value: 'gemini-3.6-flash', label: 'gemini-3.6-flash', description: '低延迟通用生成' },
+    { value: 'gemini-3.7-flash', label: 'gemini-3.7-flash', description: '低延迟通用生成' },
     { value: 'gemini-3.1-pro', label: 'gemini-3.1-pro', description: '更强推理与复杂任务' },
   ]} />
 }
@@ -58,7 +58,7 @@ describe('Select', () => {
     const listbox = screen.getByRole('listbox', { name: '默认模型' })
     expect(document.body.classList.contains('select-open')).toBe(true)
     expect(listbox.parentElement).toBe(document.body.lastElementChild)
-    expect(screen.getByRole('option', { name: 'gemini-3.6-flash' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('option', { name: 'gemini-3.7-flash' }).getAttribute('aria-selected')).toBe('true')
 
     await user.click(screen.getByRole('option', { name: 'gemini-3.1-pro' }))
     expect(trigger.textContent).toContain('gemini-3.1-pro')

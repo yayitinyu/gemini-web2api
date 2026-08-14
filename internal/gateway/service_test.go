@@ -32,11 +32,11 @@ func TestGenerateUsesAnonymousAndRejectsOversizedPrompt(t *testing.T) {
 	}
 	sender := &staticSender{body: frame(t, "hello")}
 	service := New(st, gemini.NewClient(sender, "https://gemini.example"))
-	execution, err := service.Generate(context.Background(), GenerateInput{Model: "gemini-3.6-flash", Prompt: "hi"})
+	execution, err := service.Generate(context.Background(), GenerateInput{Model: "gemini-3.7-flash", Prompt: "hi"})
 	if err != nil || execution.Result.Text != "hello" || execution.Account != nil {
 		t.Fatalf("unexpected execution=%+v err=%v", execution, err)
 	}
-	_, err = service.Generate(context.Background(), GenerateInput{Model: "gemini-3.6-flash", Prompt: strings.Repeat("x", 8_193)})
+	_, err = service.Generate(context.Background(), GenerateInput{Model: "gemini-3.7-flash", Prompt: strings.Repeat("x", 8_193)})
 	var contextErr *ContextLengthError
 	if !errors.As(err, &contextErr) {
 		t.Fatalf("expected ContextLengthError, got %v", err)

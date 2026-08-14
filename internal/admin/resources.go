@@ -67,7 +67,7 @@ func (h *Handler) TestAccount(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	h.probe(w, r, gateway.ProbeInput{AccountID: id, Model: "gemini-3.6-flash"})
+	h.probe(w, r, gateway.ProbeInput{AccountID: id, Model: "gemini-3.7-flash"})
 }
 
 func (h *Handler) Proxies(w http.ResponseWriter, r *http.Request) {
@@ -137,7 +137,7 @@ func (h *Handler) TestProxy(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	h.probe(w, r, gateway.ProbeInput{ProxyID: id, Model: "gemini-3.6-flash"})
+	h.probe(w, r, gateway.ProbeInput{ProxyID: id, Model: "gemini-3.7-flash"})
 }
 
 func (h *Handler) Probe(w http.ResponseWriter, r *http.Request) {

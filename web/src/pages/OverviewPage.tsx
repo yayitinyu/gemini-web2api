@@ -84,7 +84,7 @@ export function OverviewPage({ toast }: { toast: (kind: ToastKind, text: string)
     setProbing(true)
     try {
       const result = await apiRequest<ProbeResult>('/api/admin/probe', {
-        method: 'POST', body: JSON.stringify({ model: 'gemini-3.6-flash' }),
+        method: 'POST', body: JSON.stringify({ model: 'gemini-3.7-flash' }),
       })
       toast('success', `连通正常 · ${formatLatency(result.latency_ms)}`)
       void load()

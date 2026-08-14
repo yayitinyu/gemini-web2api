@@ -23,7 +23,7 @@ type RuntimeSettings struct {
 
 func DefaultRuntimeSettings() RuntimeSettings {
 	return RuntimeSettings{
-		DefaultModel:      "gemini-3.6-flash",
+		DefaultModel:      "gemini-3.7-flash",
 		RequestTimeoutSec: 120,
 		RetryAttempts:     2,
 		RetryDelayMS:      750,

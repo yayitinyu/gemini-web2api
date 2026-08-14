@@ -12,9 +12,21 @@ import (
 	"time"
 )
 
+func TestResolveModelCatalog(t *testing.T) {
+	t.Parallel()
+	model37, err := ResolveModel("gemini-3.7-flash", false)
+	if err != nil || model37.ID != "gemini-3.7-flash" || model37.HexID != "fbb127bbb056c959" {
+		t.Fatalf("unexpected model 3.7: %+v, err=%v", model37, err)
+	}
+	model36, err := ResolveModel("gemini-3.6-flash", false)
+	if err != nil || model36.ID != "gemini-3.6-flash" {
+		t.Fatalf("unexpected model 3.6: %+v, err=%v", model36, err)
+	}
+}
+
 func TestBuildPayloadUsesBrowserVerifiedSlots(t *testing.T) {
 	t.Parallel()
-	model, err := ResolveModel("gemini-3.6-flash", false)
+	model, err := ResolveModel("gemini-3.7-flash", false)
 	if err != nil {
 		t.Fatal(err)
 	}

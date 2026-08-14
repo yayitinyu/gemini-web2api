@@ -62,9 +62,9 @@ func TestOverviewUsesOnlyMetadata(t *testing.T) {
 	ctx := context.Background()
 	s := newTestStore(t)
 	for _, record := range []RequestRecord{
-		{RequestID: "a", Endpoint: "chat.completions", Model: "gemini-3.6-flash", StatusCode: 200, LatencyMS: 100, OutputTokens: 10},
-		{RequestID: "b", Endpoint: "chat.completions", Model: "gemini-3.6-flash", StatusCode: 502, LatencyMS: 300, OutputTokens: 0},
-		{RequestID: "c", Endpoint: "responses", Model: "gemini-3.6-flash", StatusCode: 200, LatencyMS: 200, OutputTokens: 20},
+		{RequestID: "a", Endpoint: "chat.completions", Model: "gemini-3.7-flash", StatusCode: 200, LatencyMS: 100, OutputTokens: 10},
+		{RequestID: "b", Endpoint: "chat.completions", Model: "gemini-3.7-flash", StatusCode: 502, LatencyMS: 300, OutputTokens: 0},
+		{RequestID: "c", Endpoint: "responses", Model: "gemini-3.7-flash", StatusCode: 200, LatencyMS: 200, OutputTokens: 20},
 	} {
 		if err := s.RecordRequest(ctx, record); err != nil {
 			t.Fatal(err)

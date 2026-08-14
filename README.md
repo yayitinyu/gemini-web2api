@@ -36,6 +36,7 @@
 
 当前模型目录：
 
+- `gemini-3.7-flash`（默认）
 - `gemini-3.6-flash`
 - `gemini-3.5-flash-lite`
 - `gemini-3.1-pro`（必须配置已登录的 Google Cookie）
@@ -120,7 +121,7 @@ curl https://api.example.com/v1/chat/completions \
   -H "Authorization: Bearer $GEMINI_WEB2API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemini-3.6-flash",
+    "model": "gemini-3.7-flash",
     "messages": [{"role": "user", "content": "只回复 OK"}],
     "stream": false
   }'
@@ -133,7 +134,7 @@ curl https://api.example.com/v1/responses \
   -H "Authorization: Bearer $GEMINI_WEB2API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemini-3.6-flash",
+    "model": "gemini-3.7-flash",
     "input": "用一句话解释幂等性",
     "stream": true
   }'
@@ -150,7 +151,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="gemini-3.6-flash",
+    model="gemini-3.7-flash",
     messages=[{"role": "user", "content": "Hello"}],
 )
 print(response.choices[0].message.content)

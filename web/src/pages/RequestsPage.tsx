@@ -9,7 +9,7 @@ import { Button, EmptyState, LoadingView, PageHeader, Select, type SelectOption 
 import { errorMessage, formatDateTime, formatLatency, formatNumber } from '../utils'
 
 const limit = 25
-const modelOptions = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro']
+const modelOptions = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-pro']
 const modelSelectOptions: SelectOption[] = [{ value: '', label: '全部模型' }, ...modelOptions.map((model) => ({ value: model, label: model }))]
 const statusSelectOptions: SelectOption[] = [
   { value: '', label: '全部状态' },

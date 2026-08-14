@@ -201,7 +201,7 @@ func modelOrDefault(request map[string]any, st *store.Store, ctx context.Context
 			return settings.DefaultModel
 		}
 	}
-	return "gemini-3.6-flash"
+	return "gemini-3.7-flash"
 }
 
 func unsupportedN(request map[string]any) error {

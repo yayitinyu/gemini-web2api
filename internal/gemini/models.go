@@ -14,7 +14,8 @@ type Model struct {
 }
 
 var modelCatalog = []Model{
-	{ID: "gemini-3.6-flash", HexID: "fbb127bbb056c959", Mode: 1, Description: "Latest all-around Gemini Web model"},
+	{ID: "gemini-3.7-flash", HexID: "fbb127bbb056c959", Mode: 1, Description: "Latest all-around Gemini Web model"},
+	{ID: "gemini-3.6-flash", HexID: "fbb127bbb056c959", Mode: 1, Description: "Previous generation Gemini Web Flash model"},
 	{ID: "gemini-3.5-flash-lite", HexID: "cf41b0e0dd7d53e5", Mode: 6, Description: "Fastest lightweight Gemini Web model"},
 	{ID: "gemini-3.1-pro", HexID: "9d8ca3786ebdfbea", Mode: 3, Description: "Most capable model; requires a signed-in Google account", RequiresAuth: true},
 }
