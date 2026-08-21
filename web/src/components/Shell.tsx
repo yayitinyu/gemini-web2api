@@ -5,10 +5,9 @@ import { House } from '@phosphor-icons/react/dist/icons/House'
 import { Pulse } from '@phosphor-icons/react/dist/icons/Pulse'
 import { SignOut } from '@phosphor-icons/react/dist/icons/SignOut'
 import { UsersThree } from '@phosphor-icons/react/dist/icons/UsersThree'
+import type { AppRoute } from '../routes'
 import { Brand } from './Brand'
 import { classNames } from '../utils'
-
-export type AppRoute = 'overview' | 'accounts' | 'network' | 'requests' | 'settings'
 
 const navigation = [
   { id: 'overview' as const, label: '概览', icon: House },
@@ -53,7 +52,6 @@ export function Shell({ route, navigate, onLogout, children }: {
         <Brand />
         <Navigation route={route} navigate={navigate} />
         <div className="rail__footer">
-          <div className="rail__status"><span />网关在线</div>
           <button type="button" className="nav-item" onClick={onLogout}>
             <SignOut size={19} weight="light" />
             <span>退出</span>
@@ -64,7 +62,7 @@ export function Shell({ route, navigate, onLogout, children }: {
       <header className="mobile-header">
         <Brand compact />
         <div className="mobile-header__title">Gemini Web2API</div>
-        <button type="button" className="icon-button" aria-label="退出管理面板" onClick={onLogout}>
+        <button type="button" className="icon-button" aria-label="退出" onClick={onLogout}>
           <SignOut size={19} weight="light" />
         </button>
       </header>

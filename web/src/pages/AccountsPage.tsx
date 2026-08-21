@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { CheckCircle } from '@phosphor-icons/react/dist/icons/CheckCircle'
 import { PencilSimple } from '@phosphor-icons/react/dist/icons/PencilSimple'
 import { Plus } from '@phosphor-icons/react/dist/icons/Plus'
 import { TestTube } from '@phosphor-icons/react/dist/icons/TestTube'
 import { TrashSimple } from '@phosphor-icons/react/dist/icons/TrashSimple'
 import { UsersThree } from '@phosphor-icons/react/dist/icons/UsersThree'
+import { WarningCircle } from '@phosphor-icons/react/dist/icons/WarningCircle'
 import { apiRequest } from '../api/client'
 import type { Account, ProbeResult, Proxy } from '../api/types'
-import { Button, EmptyState, LoadingView, Modal, PageHeader, Select, StatusBadge, type ToastKind } from '../components/UI'
+import { Button, EmptyState, InlineError, LoadingView, Modal, PageHeader, Select, StatusBadge } from '../components/UI'
+import { useAdmin } from '../context'
 import { errorMessage, relativeTime } from '../utils'
 
 interface AccountDraft {
@@ -18,14 +19,14 @@ interface AccountDraft {
   proxy_id: number
 }
 
-function AccountDialog({ account, proxies, open, onClose, onSaved, toast }: {
+function AccountDialog({ account, proxies, open, onClose, onSaved }: {
   account: Account | null
   proxies: Proxy[]
   open: boolean
   onClose: () => void
   onSaved: () => void
-  toast: (kind: ToastKind, text: string) => void
 }) {
+  const { toast } = useAdmin()
   const [draft, setDraft] = useState<AccountDraft>({ label: '', cookie: '', enabled: true, note: '', proxy_id: 0 })
   const [busy, setBusy] = useState(false)
   const [formError, setFormError] = useState('')
@@ -51,7 +52,7 @@ function AccountDialog({ account, proxies, open, onClose, onSaved, toast }: {
       await apiRequest<Account>(account ? `/api/admin/accounts/${account.id}` : '/api/admin/accounts', {
         method: account ? 'PUT' : 'POST', body: JSON.stringify(payload),
       })
-      toast('success', account ? '账号设置已更新' : '账号已加入凭据池')
+      toast('success', account ? '已保存' : '已添加')
       onSaved()
       onClose()
     } catch (reason) {
@@ -62,21 +63,22 @@ function AccountDialog({ account, proxies, open, onClose, onSaved, toast }: {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={account ? '编辑 Gemini 账号' : '添加 Gemini 账号'} description="Cookie 会在写入数据库前使用 AES-GCM 加密。"
-      footer={<><Button variant="quiet" type="button" onClick={onClose}>取消</Button><Button variant="primary" type="submit" form="account-form" busy={busy}>{account ? '保存更改' : '添加账号'}</Button></>}>
+    <Modal open={open} onClose={onClose} title={account ? '编辑账号' : '添加账号'}
+      footer={<><Button variant="quiet" type="button" onClick={onClose}>取消</Button><Button variant="primary" type="submit" form="account-form" busy={busy}>{account ? '保存' : '添加'}</Button></>}>
       <form id="account-form" className="form-grid" onSubmit={submit}>
-        <label className="field field--wide"><span>显示名称</span><input value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} required maxLength={80} placeholder="例如：主账号" /></label>
-        <label className="field field--wide"><span>Google Cookie {account && <small>留空则保持原值</small>}</span><textarea value={draft.cookie} onChange={(e) => setDraft({ ...draft, cookie: e.target.value })} required={!account} rows={5} placeholder="粘贴包含 __Secure-1PSID 与 __Secure-1PSIDTS 的 Cookie" spellCheck={false} /></label>
-        <div className="field"><span>固定出口</span><Select ariaLabel="固定出口" value={String(draft.proxy_id)} onChange={(value) => setDraft({ ...draft, proxy_id: Number(value) })} options={[{ value: '0', label: '自动选择 / 直连', description: '由网关按可用性自动决定出口' }, ...proxies.map((proxy) => ({ value: String(proxy.id), label: proxy.label, description: '固定使用此代理出口' }))]} /></div>
-        <label className="switch-field"><span><strong>启用账号</strong><small>关闭后不参与轮询</small></span><input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} /><i /></label>
-        <label className="field field--wide"><span>备注</span><input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} maxLength={200} placeholder="可选，仅管理员可见" /></label>
+        <label className="field field--wide"><span>名称</span><input value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} required maxLength={80} /></label>
+        <label className="field field--wide"><span>Cookie {account && <small>留空则保持原值</small>}</span><textarea value={draft.cookie} onChange={(e) => setDraft({ ...draft, cookie: e.target.value })} required={!account} rows={5} placeholder="__Secure-1PSID …" spellCheck={false} /></label>
+        <div className="field"><span>出口</span><Select ariaLabel="出口" value={String(draft.proxy_id)} onChange={(value) => setDraft({ ...draft, proxy_id: Number(value) })} options={[{ value: '0', label: '自动' }, ...proxies.map((proxy) => ({ value: String(proxy.id), label: proxy.label }))]} /></div>
+        <label className="switch-field"><span><strong>启用</strong><small>关闭后不参与轮询</small></span><input type="checkbox" checked={draft.enabled} onChange={(e) => setDraft({ ...draft, enabled: e.target.checked })} /><i /></label>
+        <label className="field field--wide"><span>备注</span><input value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} maxLength={200} /></label>
         {formError && <p className="form-error field--wide" role="alert">{formError}</p>}
       </form>
     </Modal>
   )
 }
 
-export function AccountsPage({ toast }: { toast: (kind: ToastKind, text: string) => void }) {
+export function AccountsPage() {
+  const { toast } = useAdmin()
   const [accounts, setAccounts] = useState<Account[] | null>(null)
   const [proxies, setProxies] = useState<Proxy[]>([])
   const [editing, setEditing] = useState<Account | null>(null)
@@ -108,10 +110,10 @@ export function AccountsPage({ toast }: { toast: (kind: ToastKind, text: string)
     setActionID(account.id)
     try {
       const result = await apiRequest<ProbeResult>(`/api/admin/accounts/${account.id}/test`, { method: 'POST' })
-      toast('success', `${account.label} 连接正常 · ${result.latency_ms} ms`)
+      toast('success', `${account.label} · ${result.latency_ms} ms`)
       void load()
     } catch (reason) {
-      toast('error', `检测失败：${errorMessage(reason)}`)
+      toast('error', errorMessage(reason))
       void load()
     } finally {
       setActionID(null)
@@ -123,7 +125,7 @@ export function AccountsPage({ toast }: { toast: (kind: ToastKind, text: string)
     setActionID(deleting.id)
     try {
       await apiRequest<void>(`/api/admin/accounts/${deleting.id}`, { method: 'DELETE' })
-      toast('success', '账号已从凭据池移除')
+      toast('success', '已删除')
       setDeleting(null)
       void load()
     } catch (reason) {
@@ -133,24 +135,22 @@ export function AccountsPage({ toast }: { toast: (kind: ToastKind, text: string)
     }
   }
 
-  if (accounts === null && !error) return <LoadingView label="正在读取账号凭据池" />
+  if (accounts === null && !error) return <LoadingView />
 
   return (
     <div className="page">
-      <PageHeader eyebrow="CREDENTIAL ORCHESTRATION" title="账号池" description="轮询多个 Gemini Web 会话，并独立观察每个凭据的健康状态。" action={<Button variant="primary" icon={<Plus size={18} />} onClick={addAccount}>添加账号</Button>} />
-      {error && <div className="inline-error"><span>{error}</span><Button variant="quiet" onClick={load}>重新读取</Button></div>}
+      <PageHeader title="账号" action={<Button variant="primary" icon={<Plus size={18} />} onClick={addAccount}>添加</Button>} />
+      {error && <InlineError message={error} onRetry={load} />}
 
       <section className="resource-summary">
-        <div><span>账号总数</span><strong>{accounts?.length ?? 0}</strong></div>
-        <div><span>参与轮询</span><strong>{accounts?.filter((item) => item.enabled).length ?? 0}</strong></div>
-        <div><span>健康会话</span><strong>{accounts?.filter((item) => item.enabled && item.status === 'healthy').length ?? 0}</strong></div>
-        <p>凭据以最少最近使用策略分配；失败会切换到下一个可用账号。</p>
+        <div><span>全部</span><strong>{accounts?.length ?? 0}</strong></div>
+        <div><span>轮询</span><strong>{accounts?.filter((item) => item.enabled).length ?? 0}</strong></div>
+        <div><span>健康</span><strong>{accounts?.filter((item) => item.enabled && item.status === 'healthy').length ?? 0}</strong></div>
       </section>
 
       <section className="resource-panel">
-        <header className="section-heading"><div><span>ENCRYPTED CREDENTIALS</span><h2>Gemini Web 会话</h2></div></header>
         {accounts?.length === 0 ? (
-          <EmptyState icon={<UsersThree size={28} weight="light" />} title="等待第一个账号" description="添加账号后，可以先运行一次单独检测，再开放 API 流量。" action={<Button variant="secondary" icon={<Plus size={17} />} onClick={addAccount}>添加账号</Button>} />
+          <EmptyState icon={<UsersThree size={28} weight="light" />} title="还没有账号" action={<Button variant="secondary" icon={<Plus size={17} />} onClick={addAccount}>添加</Button>} />
         ) : (
           <div className="resource-list">
             {accounts?.map((account) => (
@@ -175,10 +175,10 @@ export function AccountsPage({ toast }: { toast: (kind: ToastKind, text: string)
         )}
       </section>
 
-      <AccountDialog account={editing} proxies={proxies} open={dialogOpen} onClose={() => setDialogOpen(false)} onSaved={load} toast={toast} />
-      <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} size="small" title="移除账号？" description="该凭据会立即停止参与新请求，历史审计元数据会保留。"
-        footer={<><Button variant="quiet" onClick={() => setDeleting(null)}>取消</Button><Button variant="danger" busy={Boolean(deleting && actionID === deleting.id)} icon={<TrashSimple size={17} />} onClick={remove}>确认移除</Button></>}>
-        <div className="confirm-copy"><CheckCircle size={24} weight="light" /><p>即将移除 <strong>{deleting?.label}</strong>。加密 Cookie 会一并删除，无法从面板恢复。</p></div>
+      <AccountDialog account={editing} proxies={proxies} open={dialogOpen} onClose={() => setDialogOpen(false)} onSaved={load} />
+      <Modal open={Boolean(deleting)} onClose={() => setDeleting(null)} size="small" title="删除账号？" description="加密 Cookie 会一并删除，无法恢复。"
+        footer={<><Button variant="quiet" onClick={() => setDeleting(null)}>取消</Button><Button variant="danger" busy={Boolean(deleting && actionID === deleting.id)} icon={<TrashSimple size={17} />} onClick={remove}>删除</Button></>}>
+        <div className="confirm-copy"><WarningCircle size={24} weight="light" /><p>即将删除 <strong>{deleting?.label}</strong>。</p></div>
       </Modal>
     </div>
   )

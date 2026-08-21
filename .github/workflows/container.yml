@@ -1,3 +1,9 @@
+# Native multi-arch image:
+#   linux/amd64  -> ubuntu-24.04
+#   linux/arm64  -> ubuntu-24.04-arm
+# Each platform is compiled on a matching GitHub-hosted runner, pushed by
+# digest, then assembled into ghcr.io/yayitinyu/gemini-web2api:latest.
+
 name: Container
 
 on:
@@ -7,6 +13,7 @@ on:
   pull_request:
     paths:
       - Dockerfile
+      - .dockerignore
       - go.mod
       - go.sum
       - 'cmd/**'
@@ -20,15 +27,39 @@ permissions:
   packages: write
 
 concurrency:
-  group: container-${{ github.ref }}
+  group: container-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  IMAGE: ghcr.io/yayitinyu/gemini-web2api
+  TAG: latest
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: ubuntu-24.04
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v7
-      - uses: docker/setup-buildx-action@v4
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Prepare
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          echo "PLATFORM_PAIR=${PLATFORM//\//-}" >> "$GITHUB_ENV"
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v4
@@ -36,40 +67,94 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract image metadata
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha
-            type=raw,value=latest,enable={{is_default_branch}}
-      - name: Capture build date
-        run: echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
-      - name: Build and publish
+
+      - name: Build
         id: build
         uses: docker/build-push-action@v7
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ matrix.platform }}
+          provenance: false
+          sbom: false
           build-args: |
-            VERSION=${{ steps.meta.outputs.version }}
+            VERSION=${{ github.ref_name }}
             COMMIT=${{ github.sha }}
             BUILD_DATE=${{ env.BUILD_DATE }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Verify multi-platform manifest
+          labels: |
+            org.opencontainers.image.title=gemini-web2api
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ env.BUILD_DATE }}
+          cache-from: type=gha,scope=container-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=container-${{ matrix.platform }}
+          outputs: ${{ github.event_name != 'pull_request' && format('type=image,name={0},push-by-digest=true,name-canonical=true,push=true', env.IMAGE) || 'type=cacheonly' }}
+
+      - name: Export digest
         if: github.event_name != 'pull_request'
-        shell: bash
         run: |
-          manifest="$(docker buildx imagetools inspect --raw "ghcr.io/${GITHUB_REPOSITORY}@${{ steps.build.outputs.digest }}")"
+          set -euo pipefail
+          digest="${{ steps.build.outputs.digest }}"
+          if [[ -z "$digest" || "$digest" != sha256:* ]]; then
+            echo "missing image digest from build" >&2
+            exit 1
+          fi
+          mkdir -p "${{ runner.temp }}/digests"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+          echo "digest=$digest"
+
+      - name: Upload digest
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  manifest:
+    name: manifest
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create multi-arch manifest
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          set -euo pipefail
+          digests=()
+          for file in *; do
+            [[ -f "$file" ]] || continue
+            digests+=("${IMAGE}@sha256:${file}")
+          done
+          if [[ ${#digests[@]} -ne 2 ]]; then
+            echo "expected 2 platform digests, found ${#digests[@]}" >&2
+            ls -la >&2
+            exit 1
+          fi
+          docker buildx imagetools create -t "${IMAGE}:${TAG}" "${digests[@]}"
+
+      - name: Verify multi-arch manifest
+        run: |
+          set -euo pipefail
+          manifest="$(docker buildx imagetools inspect --raw "${IMAGE}:${TAG}")"
           platforms="$(jq -r '[.manifests[].platform | select(.os != "unknown") | "\(.os)/\(.architecture)"] | unique | sort | join(",")' <<<"$manifest")"
           echo "Published platforms: $platforms"
           test "$platforms" = "linux/amd64,linux/arm64"
+          docker buildx imagetools inspect "${IMAGE}:${TAG}"

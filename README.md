@@ -235,7 +235,7 @@ go test ./...
 cd web && npm test && npm run build
 ```
 
-容器使用非 root、只读根文件系统、丢弃全部 Linux capabilities，并提供内置健康检查。GitHub Actions 在 `main` 和 `v*` 标签上构建 `linux/amd64` 与 `linux/arm64` 镜像。
+容器使用非 root、只读根文件系统、丢弃全部 Linux capabilities，并提供内置健康检查。GitHub Actions 在 `ubuntu-24.04` 与 `ubuntu-24.04-arm` 上分别原生编译 `linux/amd64`、`linux/arm64`，按 digest 推送到 GHCR 后合成 `ghcr.io/yayitinyu/gemini-web2api:latest`。
 
 ## 致谢与许可
 

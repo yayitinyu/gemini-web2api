@@ -142,7 +142,7 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = '请
       const gap = 8
       const width = Math.min(Math.max(rect.width, 220), viewportWidth - edge * 2)
       const left = Math.min(Math.max(rect.left, edge), viewportWidth - edge - width)
-      const desiredHeight = Math.min(options.length * 58 + 12, 302)
+      const desiredHeight = Math.min(options.length * 52 + 12, 280)
       const spaceBelow = viewportHeight - rect.bottom - gap - edge
       const spaceAbove = rect.top - gap - edge
       const placement = spaceBelow < Math.min(desiredHeight, 174) && spaceAbove > spaceBelow ? 'top' : 'bottom'
@@ -220,7 +220,6 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = '请
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => choose(index)}
               >
-                <span className="select-option__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
                 <span className="select-option__copy"><strong>{option.label}</strong>{option.description && <small>{option.description}</small>}</span>
                 <span className="select-option__check" aria-hidden="true"><Check size={14} weight="bold" /></span>
               </button>
@@ -234,20 +233,14 @@ export function Select({ value, options, onChange, ariaLabel, placeholder = '请
 }
 
 interface PageHeaderProps {
-  eyebrow?: string
   title: string
-  description: string
   action?: ReactNode
 }
 
-export function PageHeader({ eyebrow, title, description, action }: PageHeaderProps) {
+export function PageHeader({ title, action }: PageHeaderProps) {
   return (
     <header className="page-header">
-      <div>
-        {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
+      <h1>{title}</h1>
       {action && <div className="page-header__action">{action}</div>}
     </header>
   )
@@ -311,9 +304,8 @@ export function Modal({ open, title, description, children, footer, onClose, siz
   )
 }
 
-export function EmptyState({ title, description, action, icon }: {
+export function EmptyState({ title, action, icon }: {
   title: string
-  description: string
   action?: ReactNode
   icon?: ReactNode
 }) {
@@ -321,8 +313,16 @@ export function EmptyState({ title, description, action, icon }: {
     <div className="empty-state">
       {icon && <div className="empty-state__icon">{icon}</div>}
       <h3>{title}</h3>
-      <p>{description}</p>
       {action}
+    </div>
+  )
+}
+
+export function InlineError({ message, onRetry }: { message: string, onRetry: () => void }) {
+  return (
+    <div className="inline-error" role="alert">
+      <span>{message}</span>
+      <Button variant="quiet" onClick={onRetry}>重试</Button>
     </div>
   )
 }
@@ -349,11 +349,10 @@ export function ToastHost({ messages, dismiss }: { messages: ToastMessage[], dis
   )
 }
 
-export function LoadingView({ label = '正在读取网关状态' }: { label?: string }) {
+export function LoadingView({ label = '加载中' }: { label?: string }) {
   return (
-    <div className="loading-view" role="status">
+    <div className="loading-view" role="status" aria-label={label}>
       <span className="loading-orbit"><span /></span>
-      <p>{label}</p>
     </div>
   )
 }

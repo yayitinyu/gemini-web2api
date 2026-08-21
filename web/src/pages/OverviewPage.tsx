@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { ArrowRight } from '@phosphor-icons/react/dist/icons/ArrowRight'
-import { CheckCircle } from '@phosphor-icons/react/dist/icons/CheckCircle'
+import { useCallback, useMemo, useState } from 'react'
 import { Copy } from '@phosphor-icons/react/dist/icons/Copy'
 import { PlugsConnected } from '@phosphor-icons/react/dist/icons/PlugsConnected'
 import { Pulse } from '@phosphor-icons/react/dist/icons/Pulse'
 import { UsersThree } from '@phosphor-icons/react/dist/icons/UsersThree'
 import { apiRequest } from '../api/client'
 import type { OverviewResponse, ProbeResult, TimePoint } from '../api/types'
-import { Button, EmptyState, LoadingView, PageHeader, StatusBadge, type ToastKind } from '../components/UI'
+import { Button, EmptyState, InlineError, LoadingView, PageHeader, StatusBadge } from '../components/UI'
+import { useAdmin } from '../context'
+import { useLoad } from '../useLoad'
 import { errorMessage, formatDateTime, formatLatency, formatNumber, relativeTime } from '../utils'
 
 function chartPath(points: TimePoint[], key: 'requests' | 'failures', width = 760, height = 210): string {
@@ -33,8 +33,7 @@ function PulseChart({ points }: { points: TimePoint[] }) {
       <div className="chart-empty">
         <span className="chart-empty__line" />
         <Pulse size={25} weight="light" />
-        <p>暂无请求脉冲</p>
-        <span>首个 API 请求会在这里留下轨迹</span>
+        <p>暂无请求</p>
       </div>
     )
   }
@@ -64,21 +63,11 @@ function PulseChart({ points }: { points: TimePoint[] }) {
   )
 }
 
-export function OverviewPage({ toast }: { toast: (kind: ToastKind, text: string) => void }) {
-  const [data, setData] = useState<OverviewResponse | null>(null)
-  const [error, setError] = useState('')
+export function OverviewPage() {
+  const { toast, navigate } = useAdmin()
   const [probing, setProbing] = useState(false)
-
-  const load = useCallback(async () => {
-    try {
-      setError('')
-      setData(await apiRequest<OverviewResponse>('/api/admin/overview?hours=24'))
-    } catch (reason) {
-      setError(errorMessage(reason))
-    }
-  }, [])
-
-  useEffect(() => { void load() }, [load])
+  const loader = useCallback(() => apiRequest<OverviewResponse>('/api/admin/overview?hours=24'), [])
+  const { data, error, load } = useLoad(loader)
 
   async function probe() {
     setProbing(true)
@@ -100,9 +89,9 @@ export function OverviewPage({ toast }: { toast: (kind: ToastKind, text: string)
   async function copyEndpoint() {
     try {
       await navigator.clipboard.writeText(endpoint)
-      toast('success', 'API 地址已复制')
+      toast('success', '已复制')
     } catch {
-      toast('error', '浏览器未允许写入剪贴板')
+      toast('error', '无法写入剪贴板')
     }
   }
 
@@ -111,62 +100,51 @@ export function OverviewPage({ toast }: { toast: (kind: ToastKind, text: string)
   return (
     <div className="page page--overview">
       <PageHeader
-        eyebrow="LIVE CONTROL SURFACE"
-        title="运行概览"
-        description="观察流量、凭据健康与网关路径，不记录提示词正文。"
-        action={<Button variant="primary" busy={probing} icon={<PlugsConnected size={18} weight="light" />} onClick={probe}>连通性检测</Button>}
+        title="概览"
+        action={<Button variant="primary" busy={probing} icon={<PlugsConnected size={18} weight="light" />} onClick={probe}>检测</Button>}
       />
 
-      {error && (
-        <div className="inline-error" role="alert">
-          <span>{error}</span><Button variant="quiet" onClick={load}>重新读取</Button>
-        </div>
-      )}
+      {error && <InlineError message={error} onRetry={load} />}
 
       {data && <>
         <section className="kpi-band" aria-label="最近 24 小时指标">
-          <div><span>24 小时请求</span><strong>{formatNumber(data.stats.requests)}</strong><small>REQUESTS</small></div>
-          <div><span>成功率</span><strong>{data.stats.success_rate === null ? '—' : `${data.stats.success_rate.toFixed(1)}%`}</strong><small>SUCCESS</small></div>
-          <div><span>P50 延迟</span><strong>{formatLatency(data.stats.p50_latency_ms)}</strong><small>LATENCY</small></div>
-          <div><span>输出 Tokens</span><strong>{formatNumber(data.stats.output_tokens)}</strong><small>ESTIMATED</small></div>
+          <div><span>24 小时请求</span><strong>{formatNumber(data.stats.requests)}</strong></div>
+          <div><span>成功率</span><strong>{data.stats.success_rate === null ? '—' : `${data.stats.success_rate.toFixed(1)}%`}</strong></div>
+          <div><span>P50 延迟</span><strong>{formatLatency(data.stats.p50_latency_ms)}</strong></div>
+          <div><span>输出 Tokens</span><strong>{formatNumber(data.stats.output_tokens)}</strong></div>
         </section>
 
         <div className="overview-grid">
           <section className="signal-panel signal-panel--chart">
-            <header className="section-heading">
-              <div><span>24H SIGNAL</span><h2>请求脉冲</h2></div>
-              <div className="live-indicator"><span />实时元数据</div>
-            </header>
+            <header className="section-heading"><h2>请求</h2></header>
             <PulseChart points={data.timeseries} />
           </section>
 
           <section className="access-panel">
-            <div className="access-panel__signal" aria-hidden="true" />
-            <header className="section-heading"><div><span>OPENAI SURFACE</span><h2>接入信息</h2></div></header>
+            <header className="section-heading"><h2>接入</h2></header>
             <div className="endpoint-line">
-              <span>BASE URL</span>
+              <span>地址</span>
               <code title={endpoint}>{endpoint}</code>
               <button type="button" className="icon-button" aria-label="复制 API 地址" onClick={copyEndpoint}><Copy size={17} weight="light" /></button>
             </div>
             <div className="access-meta">
-              <div><span>API KEY</span><strong>{data.api_key.hint || '未生成'}</strong></div>
-              <div><span>MODE</span><strong>{data.api_key.external ? '环境变量托管' : '面板托管'}</strong></div>
+              <div><span>密钥</span><strong>{data.api_key.hint || '未生成'}</strong></div>
+              <div><span>托管</span><strong>{data.api_key.external ? '环境变量' : '面板'}</strong></div>
             </div>
-            <p>支持 Chat Completions 与 Responses 的文本和函数工具调用。</p>
-            <button className="text-link" type="button" onClick={() => window.dispatchEvent(new CustomEvent('navigate-admin', { detail: 'settings' }))}>
-              查看接入设置 <ArrowRight size={16} weight="light" />
-            </button>
+            <button className="text-link" type="button" onClick={() => navigate('settings')}>设置</button>
           </section>
         </div>
 
         <div className="overview-lower">
           <section className="plain-section account-health">
             <header className="section-heading">
-              <div><span>CREDENTIAL POOL</span><h2>账号健康</h2></div>
-              <span className="section-count">{data.stats.healthy_accounts} / {data.stats.accounts} 健康</span>
+              <h2>账号</h2>
+              <button type="button" className="section-count" onClick={() => navigate('accounts')}>
+                {data.stats.healthy_accounts} / {data.stats.accounts} 健康
+              </button>
             </header>
             {data.accounts.length === 0 ? (
-              <EmptyState icon={<UsersThree size={26} weight="light" />} title="还没有 Gemini 账号" description="添加 Google Cookie 后，网关才会接受上游生成请求。" />
+              <EmptyState icon={<UsersThree size={26} weight="light" />} title="还没有账号" />
             ) : (
               <div className="health-list">
                 {data.accounts.slice(0, 4).map((account) => (
@@ -181,9 +159,12 @@ export function OverviewPage({ toast }: { toast: (kind: ToastKind, text: string)
           </section>
 
           <section className="plain-section recent-requests">
-            <header className="section-heading"><div><span>AUDIT TRACE</span><h2>最近请求</h2></div></header>
+            <header className="section-heading">
+              <h2>最近</h2>
+              <button type="button" className="section-count" onClick={() => navigate('requests')}>全部</button>
+            </header>
             {data.recent.length === 0 ? (
-              <EmptyState icon={<CheckCircle size={26} weight="light" />} title="审计轨迹仍是空的" description="这里只保存模型、耗时和状态等元数据。" />
+              <EmptyState title="暂无记录" />
             ) : (
               <div className="table-scroll"><table>
                 <thead><tr><th>时间</th><th>模型</th><th>状态</th><th>耗时</th></tr></thead>
