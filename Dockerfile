@@ -20,8 +20,10 @@ COPY --from=web-builder /src/webui/dist/ ./webui/dist/
 ARG VERSION=dev
 ARG COMMIT=unknown
 ARG BUILD_DATE=unknown
-ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+# BuildKit injects TARGETOS/TARGETARCH from --platform. Do not give defaults:
+# ARG TARGETARCH=amd64 would emit an amd64 binary on native arm64 builders.
+ARG TARGETOS
+ARG TARGETARCH
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
     -ldflags="-s -w -X main.version=${VERSION} -X main.commit=${COMMIT} -X main.buildDate=${BUILD_DATE}" \
